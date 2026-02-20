@@ -1,0 +1,17 @@
+{
+  "name": "ggamemes",
+  "version": "0.0.1.4Codex",
+  "description": "GGamemes - Что за мем? Telegram Mini App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "compression": "^1.8.1",
+    "express": "^5.2.1",
+    "multer": "^2.0.2",
+    "sharp": "^0.34.5",
+    "socket.io": "^4.8.3"
+  }
+}

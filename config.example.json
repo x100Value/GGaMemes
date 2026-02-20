@@ -1,0 +1,21 @@
+{
+  "telegram": {
+    "botToken": ""
+  },
+  "giphy": {
+    "apiKey": ""
+  },
+  "game": {
+    "minPlayers": 2,
+    "maxPlayers": 10,
+    "roundTime": 29,
+    "votingTime": 20
+  },
+  "server": {
+    "port": 3000
+  },
+  "admin": {
+    "token": "",
+    "chatId": "0"
+  }
+}

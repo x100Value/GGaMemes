@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>GGamemes — What's the Meme?</title>
+    <link rel="stylesheet" href="/css/style.css?v=0.0.1.6Codex">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+    <!-- Кнопка блокировки экрана -->
+    <div class="top-right-btns">
+        <button id="lockScreenBtn" class="lock-btn" aria-label="Lock screen">
+            <span class="lock-icon">🔓</span>
+        </button>
+        <button id="exitGameBtn" class="exit-btn" onclick="exitToMenu()">
+            <span>✕</span>
+        </button>
+    </div>
+
+    <!-- ═══════════════ ГЛАВНОЕ МЕНЮ ═══════════════ -->
+    <div id="mainScreen" class="screen active">
+        <div class="menu-bg"></div>
+        <div class="floating-quotes" id="floatingQuotes"></div>
+        <div class="menu-center">
+            <h1 class="logo">GGamemes</h1>
+            <p class="subtitle" id="subtitleText">WHAT'S THE MEME?</p>
+            <div class="online-stats" id="onlineStats">
+                <span class="stat-dot"></span>
+                <span id="statText">Connecting...</span>
+            </div>
+            <div class="menu-buttons">
+                <button class="menu-btn primary-big" onclick="quickPlay()">
+                    <span id="quickPlayLabel">🎲 Quick Match</span>
+                </button>
+                <div class="menu-row">
+                    <button class="menu-btn small" onclick="showCreateRoom()">
+                        <span id="privateRoomLabel">🔒 Private Room</span>
+                    </button>
+                    <button class="menu-btn small" onclick="showJoinRoom()">
+                        <span id="joinCodeLabel">🔑 Join by Code</span>
+                    </button>
+                </div>
+                <button class="menu-btn secondary" onclick="showLeaderboard()">
+                    <span id="leaderboardMenuLabel">🏆 Leaderboard</span>
+                </button>
+                <div class="menu-row">
+                    <button class="menu-btn small" onclick="showMemeGallery()">
+                        <span id="memesMenuLabel">🖼 Memes</span>
+                    </button>
+                    <button class="menu-btn small adult-locked" style="opacity:0.5;" onclick="showUploadHint(this)">
+                        <span id="uploadMenuLabel">📤 Upload</span>
+                    </button>
+                </div>
+                <button class="menu-btn small" onclick="showSettings()" style="margin-top:6px">
+                    <span id="settingsMenuLabel">⚙️ Settings</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ═══════════════ ГАЛЕРЕЯ МЕМОВ ═══════════════ -->
+    <div id="memeGalleryScreen" class="screen">
+        <button class="back-btn" id="backBtnGallery" onclick="showMain()">← Back</button>
+        <div class="gallery-wrap">
+            <h2 id="galleryTitle">🖼 Memes (<span id="memeCount">0</span>)</h2>
+            <div class="gallery-tabs">
+                <button class="gallery-tab active" id="galleryBaseTab" data-tab="base" onclick="switchGalleryTab('base')">📦 Base</button>
+                <button class="gallery-tab" id="galleryUserTab" data-tab="user" onclick="switchGalleryTab('user')">👥 Community</button>
+            </div>
+            <div class="gallery-grid" id="memeGalleryGrid"></div>
+        </div>
+    </div>
+    <!-- ═══════════════ ЗАГРУЗКА МЕМА ═══════════════ -->
+    <div id="uploadMemeScreen" class="screen">
+        <button class="back-btn" id="backBtnUpload" onclick="showMain()">← Back</button>
+        <div class="form-box">
+            <h2 id="uploadTitle">📤 Upload Meme</h2>
+            <p id="uploadHintText" style="color:#aaa;font-size:0.85rem;margin-bottom:12px">GIF or image, max 5MB</p>
+            <label class="upload-area" id="uploadArea">
+                <input type="file" id="memeFileInput" accept="image/gif,image/jpeg,image/png,image/webp" style="display:none" onchange="previewMeme(this)">
+                <div id="uploadPreview">
+                    <span style="font-size:3rem">📁</span>
+                    <p id="uploadTapText">Tap to select</p>
+                </div>
+            </label>
+            <button class="menu-btn" onclick="uploadMeme()" style="width:100%;margin-top:12px" id="uploadBtn" disabled>
+                <span id="uploadBtnLabel">Upload</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ НАСТРОЙКИ ═══════════════ -->
+    <div id="settingsScreen" class="screen">
+        <button class="back-btn" id="backBtnSettings" onclick="showMain()">← Back</button>
+        <div class="form-box settings-box">
+            <h2 id="settingsTitle">⚙️ Settings</h2>
+
+            <div class="settings-tabs">
+                <button class="settings-tab active" id="settingsTabGeneral" data-tab="general" onclick="switchSettingsTab('general')">General</button>
+                <button class="settings-tab" id="settingsTabProfile" data-tab="profile" onclick="switchSettingsTab('profile')">Profile</button>
+                <button class="settings-tab" id="settingsTabWallet" data-tab="wallet" onclick="switchSettingsTab('wallet')">Wallet</button>
+            </div>
+
+            <div class="settings-panel active" id="settingsGeneral">
+                <div class="settings-list">
+                    <div class="setting-item setting-language">
+                        <span class="setting-label" id="languageLabel">🌐 Language</span>
+                        <select id="languageSelect" class="language-select" onchange="onLanguageSelect(this.value)">
+                            <option value="en">English</option>
+                            <option value="ru">Русский</option>
+                        </select>
+                    </div>
+                    <p class="setting-hint" id="languageHint">App language follows Telegram settings by default</p>
+                    <div class="setting-item adult-locked" onclick="showAdultHint(this)">
+                        <span class="setting-label" id="adultLabel">🔞 Enable 18+</span>
+                        <div class="toggle-switch disabled">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                    <p class="setting-hint" id="adultHint">🔒 Adult content is currently unavailable</p>
+                </div>
+            </div>
+
+            <div class="settings-panel" id="settingsProfile">
+                <div class="profile-head">
+                    <div class="avatar-preview" id="profileAvatarPreview">
+                        <img id="profileAvatarImg" src="" alt="avatar" style="display:none">
+                        <div id="profileAvatarFallback">🙂</div>
+                    </div>
+                    <div class="profile-meta">
+                        <div class="profile-name" id="profileName">Player</div>
+                        <div class="profile-id" id="profileId">ID: —</div>
+                    </div>
+                </div>
+                <div class="profile-stats">
+                    <div class="stat-card"><span id="profileGamesLabel">Games</span><br><span id="profileGames">0</span></div>
+                    <div class="stat-card"><span id="profileWinsLabel">Wins</span><br><span id="profileWins">0</span></div>
+                </div>
+
+                <div class="ref-block">
+                    <div class="ref-title" id="refTitle">Referral stats</div>
+                    <div class="ref-grid">
+                        <div class="ref-item" id="refTotalRow">Total accrued: <span id="refIncome">0</span> NEMEMCOIN</div>
+                        <div class="ref-item" id="refL1Row">L1: <span id="refA1">0</span> (total: <span id="refL1">0</span>)</div>
+                        <div class="ref-item" id="refL2Row">L2: <span id="refA2">0</span> (total: <span id="refL2">0</span>)</div>
+                        <div class="ref-item" id="refL3Row">L3: <span id="refA3">0</span> (total: <span id="refL3">0</span>)</div>
+                        <div class="ref-item" id="refIncomeL1Row">Accrued L1: <span id="refIncome1">0</span> NEMEMCOIN</div>
+                        <div class="ref-item" id="refIncomeL2Row">Accrued L2: <span id="refIncome2">0</span> NEMEMCOIN</div>
+                        <div class="ref-item" id="refIncomeL3Row">Accrued L3: <span id="refIncome3">0</span> NEMEMCOIN</div>
+                    </div>
+                    <div class="ref-note" id="refNote">Unlimited payouts</div>
+
+                    <div class="ref-chart" id="refChart"></div>
+
+                </div>
+
+            </div>
+
+            <div class="settings-panel" id="settingsWallet">
+                <div class="wallet-box">
+                    <div class="wallet-status" id="walletStatus">Wallet not connected</div>
+                    <div id="tonConnectBtn" class="ton-connect-btn"></div>
+                    <button class="menu-btn secondary" id="disconnectWalletBtn" onclick="disconnectWallet()" style="display:none;margin-top:8px">
+                        <span id="disconnectWalletLabel">Disconnect</span>
+                    </button>
+                    <div class="wallet-address" id="walletAddress">—</div>
+                </div>
+                <div class="nft-section">
+                    <div class="nft-title" id="walletNftTitle">NFT in wallet</div>
+                    <div class="nft-grid" id="nftGrid">
+                        <div class="nft-empty" id="nftEmptyState">Connect wallet to see NFTs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ СОЗДАНИЕ КОМНАТЫ ═══════════════ -->
+    <div id="createRoomScreen" class="screen">
+        <button class="back-btn" id="backBtnCreate" onclick="showMain()">← Back</button>
+        <div class="form-box">
+            <h2 id="createRoomTitle">Create room</h2>
+            <input type="text" class="game-input" id="hostName" placeholder="Your name" maxlength="20">
+
+            <div class="categories-picker">
+                <p class="picker-label" id="categoriesLabel">Situation categories:</p>
+                <label class="cat-check"><input type="checkbox" value="general" checked disabled> <span id="catGeneralLabel">🌍 General</span></label>
+                <label class="cat-check"><input type="checkbox" value="friends" id="catFriends"> <span id="catFriendsLabel">👫 Friends</span></label>
+                <label class="cat-check"><input type="checkbox" value="study" id="catStudy"> <span id="catStudyLabel">📚 Study</span></label>
+                <label class="cat-check"><input type="checkbox" value="work" id="catWork"> <span id="catWorkLabel">💼 Work</span></label>
+                <label class="cat-check adult-cat-disabled"><input type="checkbox" value="adult" disabled> 🔞 18+ <span class="cat-lock">🔒</span></label>
+            </div>
+            <button class="menu-btn" onclick="createRoom()" style="width:100%">
+                <span id="createRoomBtnLabel">Create</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ ПРИСОЕДИНЕНИЕ ═══════════════ -->
+    <div id="joinRoomScreen" class="screen">
+        <button class="back-btn" id="backBtnJoin" onclick="showMain()">← Back</button>
+        <div class="form-box">
+            <h2 id="joinRoomTitle">Join room</h2>
+            <input type="text" class="game-input room-code-input" id="roomCode" placeholder="Room code" maxlength="8">
+            <input type="text" class="game-input" id="playerName" placeholder="Your name" maxlength="20">
+            <button class="menu-btn" onclick="joinRoom()" style="width:100%">
+                <span id="joinRoomBtnLabel">Join</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ ЛОББИ ═══════════════ -->
+    <div id="lobbyScreen" class="screen">
+        <button class="back-btn" id="backBtnLobby" onclick="leaveLobby()">← Leave</button>
+        <div class="lobby-content">
+            <h2 id="lobbyTitle">Room</h2>
+            <div class="room-code-display" id="roomIdDisplay">—</div>
+            <p class="lobby-message" id="lobbyMessage">Gathering players...</p>
+            <div class="players-list" id="playersList" style="min-height:auto"></div>
+            <button class="menu-btn" id="readyBtn" onclick="playerReady()">
+                <span id="readyBtnLabel">Ready!</span>
+            </button>
+            <button class="menu-btn force-start" id="forceStartBtn" onclick="forceStart()" style="display:none;margin-top:10px">
+                <span id="forceStartLabel">⚡ Start game</span>
+            </button>
+            <button class="menu-btn secondary" id="shareRoomBtn" onclick="shareRoom()" style="margin-top:10px">
+                <span id="shareRoomLabel">📤 Invite friends</span>
+            </button>
+            <div class="menu-row share-row">
+                <button class="menu-btn small secondary share-btn telegram" onclick="shareRoomTelegram()">
+                    <span>Telegram</span>
+                </button>
+                <button class="menu-btn small secondary share-btn x" onclick="shareRoomX()">
+                    <span>X</span>
+                </button>
+                <button class="menu-btn small secondary share-btn discord" onclick="shareRoomDiscord()">
+                    <span>Discord</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ ИГРОВОЙ СТОЛ ═══════════════ -->
+    <div id="gameScreen" class="screen">
+        <!-- HUD -->
+        <div class="game-hud">
+            <div class="hud-info"><span id="hudPartyLabel">Party</span> <span id="partyNum">1</span>/3</div>
+            <div class="hud-timer" id="timer">45</div>
+            <div class="hud-info"><span id="hudRoundLabel">Round</span> <span id="roundNum">1</span>/5</div>
+        </div>
+
+        <!-- Овальный стол -->
+        <div class="table-area">
+            <div class="oval-table" id="ovalTable">
+                <div class="table-neon"></div>
+                <!-- Центр стола -->
+                <div class="table-center" id="tableCenter">
+                    <div class="situation-display" id="situationDisplay"></div>
+                    <div class="center-memes" id="centerMemes"></div>
+                </div>
+                <!-- Места других игроков (генерируются динамически) -->
+                <div class="other-players" id="otherPlayers"></div>
+            </div>
+        </div>
+
+        <!-- Зона замены (появляется при свайпе вниз) -->
+        <div class="swap-zone" id="swapZone">
+            <div class="swap-text" id="swapText">Swap</div>
+        </div>
+
+        <!-- Индикатор замен -->
+        <div class="swaps-badge" id="swapsBadge" style="display:none"></div>
+
+        <!-- Рука игрока (веер карт) -->
+        <div class="hand-area">
+            <div class="cards-fan" id="cardsFan"></div>
+        </div>
+
+        <!-- Индикатор хода -->
+        <div class="submit-indicator" id="submitIndicator" style="display:none">
+            <span id="submitIndicatorText">✓ Card submitted</span>
+        </div>
+
+        <!-- Кнопка пропуска -->
+        <div id="thinkingIndicator"></div>
+    </div>
+
+    <!-- ═══════════════ ГОЛОСОВАНИЕ ═══════════════ -->
+    <div id="votingScreen" class="screen">
+        <div class="voting-wrap">
+            <div class="voting-header">
+                <h2 id="votingTitle">Pick the legend</h2>
+                <p class="situation-reminder" id="votingSituation"></p>
+            </div>
+            <div class="voting-grid" id="votingMemes"></div>
+            <div class="voting-footer" id="votingStatus">Tap the best meme</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ РЕЗУЛЬТАТЫ РАУНДА ═══════════════ -->
+    <div id="roundResultScreen" class="screen">
+        <div class="result-content">
+            <h2 id="roundWinnerTitle">Round winner</h2>
+            <div class="winner-display" id="winnerDisplay"></div>
+            <div class="winner-name" id="winnerName"></div>
+            <div class="scores-display" id="scoresDisplay"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ РЕЗУЛЬТАТЫ ПАРТИИ ═══════════════ -->
+    <div id="partyResultScreen" class="screen">
+        <div class="result-content">
+            <h2 id="partyTitle">Party finished</h2>
+            <div class="scores-display" id="partyScores"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ ФИНАЛ ИГРЫ ═══════════════ -->
+    <div id="finalScreen" class="screen">
+        <div class="final-content">
+            <h1 class="final-title" id="finalTitle">Game over</h1>
+            <div class="podium-container">
+                <div class="podium">
+                    <div class="podium-place second" id="podium2"></div>
+                    <div class="podium-place first" id="podium1"></div>
+                    <div class="podium-place third" id="podium3"></div>
+                </div>
+            </div>
+            <div class="scores-display" id="finalScores"></div>
+            <button class="menu-btn" onclick="showMain()" style="margin-top:20px;width:100%;max-width:280px">
+                <span id="finalBackMenuLabel">Back to menu</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ ЛИДЕРБОРД ═══════════════ -->
+    <div id="leaderboardScreen" class="screen">
+        <button class="back-btn" id="backBtnLeaderboard" onclick="showMain()">← Back</button>
+        <div class="leaderboard-content">
+            <h2 id="leaderboardTitle">🏆 Leaderboard</h2>
+            <div class="leaderboard-list" id="leaderboardList"></div>
+        </div>
+    </div>
+
+    <!-- Фан-сообщение (оверлей) -->
+    <div class="fun-message" id="funMessage" style="display:none"></div>
+
+    <!-- Нижняя панель статистики -->
+    <div class="stats-footer" id="statsFooter">
+        <div class="stats-item"><span id="statUnique">—</span></div>
+        <div class="stats-item"><span id="statTotal">—</span></div>
+        <div class="stats-item">v<span id="statVersion">—</span></div>
+        <div class="stats-item" id="statAnalytics">analytics: —</div>
+    </div>
+
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="/js/game.js?v=0.0.1.6Codex"></script>
+    <script async src="https://tganalytics.xyz/index.js" onload="if (typeof initAnalytics === 'function') initAnalytics(true)"></script>
+</body>
+</html>
