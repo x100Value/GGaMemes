@@ -1733,7 +1733,7 @@ io.on('connection', (socket) => {
   // ─── УДАЛЕНИЕ МЕМА (АДМИН) ───
   socket.on('deleteMeme', (data) => {
     // Админ может удалять без комнаты — берём userId из socket
-    const ADMIN_ID = '406185603';
+    const ADMIN_ID = String(process.env.ADMIN_ID || '0');
     const userId = socket.userId || (players.get(socket.id) && players.get(socket.id).userId);
     log('deleteMeme:attempt', { socketId: socket.id, userId, filename: data.filename });
     if (userId !== ADMIN_ID) {

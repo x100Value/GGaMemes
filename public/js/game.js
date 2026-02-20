@@ -883,7 +883,7 @@ async function uploadMeme() {
 
 
 // ═══ АДМИН: Удаление мемов ═══
-const ADMIN_ID = '406185603';
+const ADMIN_ID = '0';
 
 function deleteMeme(filename, pool = 'base') {
     if (currentUser.id !== ADMIN_ID) return;

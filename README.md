@@ -20,7 +20,8 @@ This repository contains application code only.
 
 1. Copy `.env.example` to `.env`.
 2. Fill required variables.
-3. Optional: copy `config.example.json` to `config.json` for local defaults.
+3. Set `ADMIN_ID` in `.env` to your Telegram numeric user id.
+4. Optional: copy `config.example.json` to `config.json` for local defaults.
 
 ## Run
 
