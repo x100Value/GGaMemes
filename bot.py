@@ -896,11 +896,12 @@ async def handle_new_submission(request):
     try:
         data = await request.json()
         submission = data.get('submission')
-        if submission:
-            await send_to_moderation(submission)
-            logger.info(f"[WEB] Submission queued: {submission.get('id')}")
+        if not isinstance(submission, dict):
+            return web.json_response({'error': 'No submission'}, status=400)
+
+        await send_to_moderation(submission)
+        logger.info(f"[WEB] Submission queued: {submission.get('id')}")
         return web.json_response({'ok': True})
-        return web.json_response({'error': 'No submission'}, status=400)
     except Exception as e:
         logger.error(f"[WEB] Error: {e}")
         return web.json_response({'error': str(e)}, status=500)
